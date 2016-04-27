@@ -6,12 +6,79 @@ var endFrameMillis = Date.now();
 
 var player = new Player();
 var keyboard = new Keyboard();
-var LAYER_COUNT = 3;
+// abitrary choice for 1m
+var METER = TILE;
+// very exaggerated gravity (6x)
+var GRAVITY = METER * 9.8 * 6;
+// max horizontal speed (10 tiles per second)
+var MAXDX = METER * 10;
+// max vertical speed (15 tiles per second)
+var MAXDY = METER * 15;
+// horizontal acceleration - take 1/2 second to reach maxdx
+var ACCEL = MAXDX * 2;
+// horizontal friction - take 1/6 second to stop from maxdx
+var FRICTION = MAXDX * 6;
+// (a large) instantaneous jump impulse
+var JUMP = METER * 1500;
+var LAYER_COUNT = 2;
 var MAP = { tw: 60, th: 15 };
 var TILE = 35;
 var TILESET_TILE = TILE * 2;
 var TILESET_PADDING = 2;
 var TILESET_SPACING = 2;var TILESET_COUNT_X = 14;var TILESET_COUNT_Y = 14;
+var LAYER_COUNT = 3;
+var LAYER_BACKGOUND = 0;
+var LAYER_PLATFORMS = 1;
+var LAYER_LADDERS = 2;
+
+
+
+
+if (left)
+    ddx = ddx - ACCEL; // player wants to go left
+else if (wasleft)
+    ddx = ddx + FRICTION; // player was going left, but not any more
+if (right)
+    ddx = ddx + ACCEL; // player wants to go right
+else if (wasright)
+    ddx = ddx - FRICTION; // player was going right, but not any more
+if (jump && !this.jumping && !falling) {
+    ddy = ddy - JUMP; // apply an instantaneous (large) vertical impulse
+    this.jumping = true;
+}
+// calculate the new position and velocity:
+this.position.y = Math.floor(this.position.y + (deltaTime * this.velocity.y));
+this.position.x = Math.floor(this.position.x + (deltaTime * this.velocity.x));
+this.velocity.x = bound(this.velocity.x + (deltaTime * ddx), -MAXDX, MAXDX);
+this.velocity.y = bound(this.velocity.y + (deltaTime * ddy), -MAXDY, MAXDY);
+
+
+var cells = []; // the array that holds our simplified collision data
+function initialize() {
+    for (var layerIdx = 0; layerIdx < LAYER_COUNT; layerIdx++) { // initialize the collision map
+        cells[layerIdx] = [];
+        var idx = 0;
+        for (var y = 0; y < level1.layers[layerIdx].height; y++) {
+            cells[layerIdx][y] = [];
+            for (var x = 0; x < level1.layers[layerIdx].width; x++) {
+                if (level1.layers[layerIdx].data[idx] != 0) {
+                    // for each tile we find in the layer data, we need to create 4 collisions
+                    // (because our collision squares are 35x35 but the tile in the level are 70x70)
+                    cells[layerIdx][y][x] = 1;
+                    cells[layerIdx][y - 1][x] = 1;
+                    cells[layerIdx][y - 1][x + 1] = 1;
+                    cells[layerIdx][y][x + 1] = 1;
+                }
+                else if (cells[layerIdx][y][x] != 1) {
+                    cells[layerIdx][y][x] = 0; // if we haven't set this cell's value, then set it to 0 now
+                }
+                idx++;
+            }
+        }
+    }
+}
+
+
 
 
 var tileset = document.createElement("img");
@@ -52,8 +119,73 @@ var fps = 0;
 var fpsCount = 0;
 var fpsTime = 0;
 
+
+function cellAtPixelCoord(layer, x, y) {
+    if (x < 0 || x > SCREEN_WIDTH) // remove ‘|| y<0’
+        return 1;
+    // let the player drop of the bottom of the screen
+    // (this means death)
+    if (y > SCREEN_HEIGHT)
+        return 0;
+    return cellAtTileCoord(layer, p2t(x), p2t(y));
+};
+function cellAtTileCoord(layer, tx, ty) // remove ‘|| y<0’
+{
+    if (tx < 0 || tx >= MAP.tw)
+        return 1;
+    // let the player drop of the bottom of the screen
+    // (this means death)
+    if (ty >= MAP.th)
+        return 0;
+    return cells[layer][ty][tx];
+};
+function tileToPixel(tile) {
+    return tile * TILE;
+};
+function pixelToTile(pixel) {
+    return Math.floor(pixel / TILE);
+};
+function bound(value, min, max) {
+    if (value < min)
+        return min;
+    if (value > max)
+        return max;
+    return value;
+}
+
+
+
 // load an image to draw
 function drawMap() {
+    function cellAtPixelCoord(layer, x, y) {
+        if (x < 0 || x > SCREEN_WIDTH || y < 0)
+            return 1;
+        // let the player drop of the bottom of the screen (this means death)
+        if (y > SCREEN_HEIGHT)
+            return 0;
+        return cellAtTileCoord(layer, p2t(x), p2t(y));
+    };
+    function cellAtTileCoord(layer, tx, ty) {
+        if (tx < 0 || tx >= MAP.tw || ty < 0)
+            return 1;
+        // let the player drop of the bottom of the screen (this means death)
+        if (ty >= MAP.th)
+            return 0;
+        return cells[layer][ty][tx];
+    };
+    function tileToPixel(tile) {
+        return tile * TILE;
+    };
+    function pixelToTile(pixel) {
+        return Math.floor(pixel / TILE);
+    };
+    function bound(value, min, max) {
+        if (value < min)
+            return min;
+        if (value > max)
+            return max;
+        return value;
+    }
     for (var layerIdx = 0; layerIdx < LAYER_COUNT; layerIdx++) {
         var idx = 0;
         for (var y = 0; y < level1.layers[layerIdx].height; y++) {
@@ -75,6 +207,7 @@ function drawMap() {
 function run() {
     context.fillStyle = "#ccc";
     context.fillRect(0, 0, canvas.width, canvas.height);
+    drawMap();
     var deltaTime = getDeltaTime();
     player.update(deltaTime);
     player.draw();
@@ -92,6 +225,7 @@ function run() {
     context.fillText("FPS: " + fps, 5, 20, 100);
 }
 
+initialize();
 
 //-------------------- Don't modify anything below here
 
