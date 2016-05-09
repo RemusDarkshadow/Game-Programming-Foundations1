@@ -133,7 +133,7 @@ function cellAtPixelCoord(layer, x, y) {
         return 0;
     return cellAtTileCoord(layer, p2t(x), p2t(y));
 };
-function cellAtTileCoord(layer, tx, ty) // remove ‘|| y<0’
+function cellAtTileCoord(layer, ty, tx) // remove ‘|| y<0’
 {
     if (tx < 0 || tx >= MAP.tw)
         return 1;
