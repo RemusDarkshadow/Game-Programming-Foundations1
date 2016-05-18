@@ -26,7 +26,8 @@ var Player = function () {
     [65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78]);
     for (var i = 0; i < ANIM_MAX; i++) {
         this.sprite.setAnimationOffset(i, -55, -87);
-    }
+    }
+
     this.position = new Vector2();
     this.position.set(9 * TILE, 0 * TILE);
 
@@ -34,14 +35,57 @@ var Player = function () {
     this.height = 163;
 
     this.velocity = new Vector2();
-
+    this.velocity.set(0, 0);
     this.falling = true;
     this.jumping = false;
 
     this.direction = LEFT
-};
+};
+
 Player.prototype.update = function (deltaTime)
 {
+    if (keyboard.isKeyDown(keyboard.KEY_LEFT) == true) {
+        left = true;
+        this.direction = LEFT;
+        if (this.sprite.currentAnimation != ANIM_WALK_LEFT && this.jumping == false)
+            this.sprite.setAnimation(ANIM_WALK_LEFT);
+    }
+   else if (keyboard.isKeyDown(keyboard.KEY_RIGHT) == true) {
+        right = true;
+        this.direction = RIGHT;
+        if (this.sprite.currentAnimation != ANIM_WALK_RIGHT && this.jumping == false)
+            this.sprite.setAnimation(ANIM_WALK_RIGHT);
+   }
+   else {
+       if (this.jumping == false && this.falling == false) {
+           if (jump && !this.jumping && !falling) {
+               // apply an instantaneous (large) vertical impulse
+               ddy = ddy - JUMP;
+               this.jumping = true;
+               if (this.direction == LEFT)
+                   this.sprite.setAnimation(ANIM_JUMP_LEFT)
+               else
+                   this.sprite.setAnimation(ANIM_JUMP_RIGHT)
+           }
+           if (this.direction == LEFT) {
+               if (this.sprite.currentAnimation != ANIM_IDLE_LEFT)
+                   this.sprite.setAnimation(ANIM_IDLE_LEFT);
+           }
+           else {
+               if (this.sprite.currentAnimation != ANIM_IDLE_RIGHT)
+                   this.sprite.setAnimation(ANIM_IDLE_RIGHT);
+           }
+       }
+   }
+    if (keyboard.isKeyDown(keyboard.KEY_SPACE) == true) {
+        jump = true;
+        if (left == true) {
+            this.sprite.setAnimation(ANIM_JUMP_LEFT);
+        }
+        if (right == true) {
+            this.sprite.setAnimation(ANIM_JUMP_RIGHT);
+        }
+    }
     this.sprite.update(deltaTime);
 
     var left = false;

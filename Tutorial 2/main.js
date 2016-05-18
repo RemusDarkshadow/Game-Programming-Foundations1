@@ -11,13 +11,15 @@ var keyboard = new Keyboard();
 var LAYER_COUNT = 2;
 var LAYER_BACKGOUND = 0;
 var LAYER_PLATFORMS = 1;
-var LAYER_LADDERS = 2;
-var MAP = { tw: 60, th: 15 };
+var LAYER_ENEMIES = 2;
+var MAP = { tw: 60, th: 35 };
 var TILE = 35;
 var TILESET_TILE = TILE * 2;
 var TILESET_PADDING = 2;
-var TILESET_SPACING = 2;var TILESET_COUNT_X = 14;var TILESET_COUNT_Y = 14;
-
+var TILESET_SPACING = 2;
+var TILESET_COUNT_X = 14;
+var TILESET_COUNT_Y = 14;
+var score = 999;
 
 
 // abitrary choice for 1m
@@ -39,24 +41,7 @@ var player = new Player();
 
 
 
-/*if (left)
-    ddx = ddx - ACCEL; // player wants to go left
-else if (wasleft)
-    ddx = ddx + FRICTION; // player was going left, but not any more
-if (right)
-    ddx = ddx + ACCEL; // player wants to go right
-else if (wasright)
-    ddx = ddx - FRICTION; // player was going right, but not any more
-if (jump && !this.jumping && !falling) {
-    ddy = ddy - JUMP; // apply an instantaneous (large) vertical impulse
-    this.jumping = true;
-}
-// calculate the new position and velocity:
-this.position.y = Math.floor(this.position.y + (deltaTime * this.velocity.y));
-this.position.x = Math.floor(this.position.x + (deltaTime * this.velocity.x));
-this.velocity.x = bound(this.velocity.x + (deltaTime * ddx), -MAXDX, MAXDX);
-this.velocity.y = bound(this.velocity.y + (deltaTime * ddy), -MAXDY, MAXDY);
-*/
+
 
 var cells = []; // the array that holds our simplified collision data
 function initialize() {
@@ -158,55 +143,72 @@ function bound(value, min, max) {
 }
 
 
-
+var worldOffsetX = 0;
 // load an image to draw
 function drawMap() {
-    function cellAtPixelCoord(layer, x, y) {
-        if (x < 0 || x > SCREEN_WIDTH || y < 0)
-            return 1;
-        // let the player drop of the bottom of the screen (this means death)
-        if (y > SCREEN_HEIGHT)
-            return 0;
-        return cellAtTileCoord(layer, p2t(x), p2t(y));
-    };
-    function cellAtTileCoord(layer, tx, ty) {
-        if (tx < 0 || tx >= MAP.tw || ty < 0)
-            return 1;
-        // let the player drop of the bottom of the screen (this means death)
-        if (ty >= MAP.th)
-            return 0;
-        return cells[layer][ty][tx];
-    };
-    function tileToPixel(tile) {
-        return tile * TILE;
-    };
-    function pixelToTile(pixel) {
-        return Math.floor(pixel / TILE);
-    };
-    function bound(value, min, max) {
-        if (value < min)
-            return min;
-        if (value > max)
-            return max;
-        return value;
+       worldOffsetX = startX * TILE + offsetX;
+    context.fillStyle = "yellow";
+    context.font = "32px Arial";
+    var scoreText = "Time " + score;
+    context.fillText(scoreText, SCREEN_WIDTH - 170, 35);
+
+    var startX = -1;
+    var maxTiles = Math.floor(SCREEN_WIDTH / TILE) + 2;
+    var tileX = pixelToTile(player.position.x);
+    var offsetX = TILE + Math.floor(player.position.x % TILE);
+
+    startX = tileX - Math.floor(maxTiles / 2);
+
+    if (startX < -1) {
+        startX = 0;
+        offsetX = 0;
     }
+    if (startX > MAP.tw - maxTiles) {
+        startX = MAP.tw - maxTiles + 1;
+        offsetX = TILE;
+    }
+    worldOffsetX = startX * TILE + offsetX;
+
     for (var layerIdx = 0; layerIdx < LAYER_COUNT; layerIdx++) {
-        var idx = 0;
         for (var y = 0; y < level1.layers[layerIdx].height; y++) {
-            for (var x = 0; x < level1.layers[layerIdx].width; x++) {
+            var idx = y * level1.layers[layerIdx].width + startX;
+            for (var x = startX; x < startX + maxTiles; x++) {
                 if (level1.layers[layerIdx].data[idx] != 0) {
-                    // the tiles in the Tiled map are base 1 (meaning a value of 0 means no tile), so subtract one from the tileset id to get the
-                    // correct tile
+                    // the tiles in the Tiled map are base 1 (meaning a value of 0 means no tile),
+                    // so subtract one from the tileset id to get the correct tile
                     var tileIndex = level1.layers[layerIdx].data[idx] - 1;
-                    var sx = TILESET_PADDING + (tileIndex % TILESET_COUNT_X) * (TILESET_TILE + TILESET_SPACING);
-                    var sy = TILESET_PADDING + (Math.floor(tileIndex / TILESET_COUNT_Y)) * (TILESET_TILE + TILESET_SPACING);
-                    context.drawImage(tileset, sx, sy, TILESET_TILE, TILESET_TILE, x * TILE, (y - 1) * TILE, TILESET_TILE, TILESET_TILE);
+                    var sx = TILESET_PADDING + (tileIndex % TILESET_COUNT_X) *
+                   (TILESET_TILE + TILESET_SPACING);
+                    var sy = TILESET_PADDING + (Math.floor(tileIndex / TILESET_COUNT_Y)) *
+                   (TILESET_TILE + TILESET_SPACING);
+                    context.drawImage(tileset, sx, sy, TILESET_TILE, TILESET_TILE,
+                   (x - startX) * TILE - offsetX, (y - 1) * TILE, TILESET_TILE, TILESET_TILE);
                 }
                 idx++;
             }
         }
     }
 }
+
+/*//DEBUG DRAW LEVEL COLLISION DATA
+function DrawLevelCollisionData(tileLayer) {
+    for (var y = 0; y < level1.layers[tileLayer].height; y++) {
+        for (var x = 0; x < level1.layers[tileLayer].width; x++) {
+            if (cells[tileLayer][y][x] == 1) {
+                context.fillStyle = "#F00";
+                context.fillRect(TILE * x, TILE * y, TILE, TILE);
+            }
+        }
+    }
+}
+//DEBUG DRAW PLAYER CELL COLLISION DATA
+//fill in value of cell
+context.fillStyle = "#00F";
+context.fillRect(tx * 35, ty * 35, 35, 35);
+//fill in value of cellRight
+*/
+
+
 
 function run() {
     context.fillStyle = "#ccc";
@@ -223,6 +225,7 @@ function run() {
         fps = fpsCount;
         fpsCount = 0;
     }
+    DrawLevelCollisionData = 1
     // draw the FPS
     context.fillStyle = "#f00";
     context.font = "14px Arial";
