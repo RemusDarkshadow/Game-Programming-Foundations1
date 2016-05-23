@@ -118,7 +118,7 @@ function cellAtPixelCoord(layer, x, y) {
         return 0;
     return cellAtTileCoord(layer, p2t(x), p2t(y));
 };
-function cellAtTileCoord(layer, ty, tx) // remove ‘|| y<0’
+function cellAtTileCoord(layer, tx, ty) // remove ‘|| y<0’
 {
     if (tx < 0 || tx >= MAP.tw)
         return 1;
@@ -126,7 +126,7 @@ function cellAtTileCoord(layer, ty, tx) // remove ‘|| y<0’
     // (this means death)
     if (ty >= MAP.th)
         return 0;
-    return cells[layer][ty][tx];
+    return cells[layer][tx][ty];
 };
 function tileToPixel(tile) {
     return tile * TILE;
@@ -144,9 +144,20 @@ function bound(value, min, max) {
 
 
 var worldOffsetX = 0;
+var worldOffsetY = 0;
 // load an image to draw
 function drawMap() {
-       worldOffsetX = startX * TILE + offsetX;
+    worldOffsetY = startY * TILE + offsetY;    var startY = -1;    var tileY = pixelToTile(player.position.y);    var offsetY = TILE + Math.floor(player.position.y % TILE);    startY = tileY - Math.floor(maxTiles / 2);
+
+    if (startY < -1) {
+        startY = 0;
+        offsetY = 0;
+    }
+    if (startY > MAP.tw - maxTiles) {
+        startY = MAP.tw - maxTiles + 1;
+        offsetY = TILE;
+    }
+    worldOffsetY = startY * TILE + offsetY;    worldOffsetX = startX * TILE + offsetX;
     context.fillStyle = "yellow";
     context.font = "32px Arial";
     var scoreText = "Time " + score;
