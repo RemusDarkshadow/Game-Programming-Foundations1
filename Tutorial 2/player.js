@@ -1,12 +1,16 @@
 var canvas = document.getElementById("gameCanvas")
 
+var sfx = function (){
+    sfx.play
+};
+
 var LEFT = 0;
 var RIGHT = 1;
 var ANIM_IDLE_LEFT = 0;
 var ANIM_JUMP_LEFT = 1;
 var ANIM_WALK_LEFT = 2;
 var ANIM_IDLE_RIGHT = 3;
-var ANIM_JUMP_RIGHT = 4;
+var ANIM_JUMP_RIGHT = 8;
 var ANIM_WALK_RIGHT = 5;
 var ANIM_MAX = 6;
 
@@ -42,8 +46,21 @@ var Player = function () {
     this.direction = LEFT
 };
 
-Player.prototype.update = function (deltaTime)
-{
+
+Player.prototype.draw = function () {
+    /*context.save();
+    context.translate(this.position.x, this.position.y);
+    context.rotate(this.rotation);
+    context.drawImage(this.image, -this.width / 2, -this.height / 2);
+    context.restore();*/
+    this.sprite.draw(context, this.position.x - worldOffsetX, this.position.y);
+}
+
+
+
+
+
+Player.prototype.update = function (deltaTime) {
     if (keyboard.isKeyDown(keyboard.KEY_LEFT) == true) {
         left = true;
         this.direction = LEFT;
@@ -66,7 +83,8 @@ Player.prototype.update = function (deltaTime)
                     this.sprite.setAnimation(ANIM_JUMP_LEFT)
                 else
                     this.sprite.setAnimation(ANIM_JUMP_RIGHT)
-            }
+            }
+
             if (this.direction == LEFT) {
                 if (this.sprite.currentAnimation != ANIM_IDLE_LEFT)
                     this.sprite.setAnimation(ANIM_IDLE_LEFT);
@@ -79,6 +97,7 @@ Player.prototype.update = function (deltaTime)
     }
     if (keyboard.isKeyDown(keyboard.KEY_SPACE) == true) {
         jump = true;
+        sfx.play();
         if (left == true) {
             this.sprite.setAnimation(ANIM_JUMP_LEFT);
         }
@@ -101,6 +120,11 @@ Player.prototype.update = function (deltaTime)
     if (keyboard.isKeyDown(keyboard.KEY_SPACE) == true) {
         jump = true;
     }
+    if (keyboard.isKeyDown(keyboard.KEY_SPACE) == true) {
+        sfx = true;
+    }
+  
+
 
     var wasleft = this.velocity.x < 0;
     var wasright = this.velocity.x > 0;
@@ -160,9 +184,8 @@ Player.prototype.update = function (deltaTime)
              this.jumping = false; // (or jumping)
              ny = 0; // no longer overlaps the cells below
          }*/
-    if(this.velocity.y >0)
-    {   
-        if((celldown && !cell)   )// || (cellDiag && !cellRight && !nx))
+    if (this.velocity.y > 0) {
+        if ((celldown && !cell))// || (cellDiag && !cellRight && !nx))
         {
             this.position.y = tileToPixel(ty);
             this.velocity.y = 0;
@@ -171,28 +194,22 @@ Player.prototype.update = function (deltaTime)
             ny = 0;
         }
     }
-    else if (this.velocity.y < 0)
-    {
-        if(cell && !celldown)
-        {
+    else if (this.velocity.y < 0) {
+        if (cell && !celldown) {
             this.position.y = tileToPixel(ty + 1);
             this.velocity.y = 0;
             cell = celldown;
         }
     }
-    
-    if(this.velocity.x  > 0)
-    {
-        if(cellright && !cell)
-        {
+
+    if (this.velocity.x > 0) {
+        if (cellright && !cell) {
             this.position.x = tileToPixel(tx);
             this.velocity.x = 0;
         }
     }
-    else if(this.velocity.x  < 0)
-    {
-        if(cell && !cellright)
-        {
+    else if (this.velocity.x < 0) {
+        if (cell && !cellright) {
             this.position.x = tileToPixel(tx + 1);
             this.velocity.x = 0;
         }
@@ -201,12 +218,3 @@ Player.prototype.update = function (deltaTime)
 
 
 
-    
-    Player.prototype.draw = function () {
-        /*context.save();
-        context.translate(this.position.x, this.position.y);
-        context.rotate(this.rotation);
-        context.drawImage(this.image, -this.width / 2, -this.height / 2);
-        context.restore();*/
-        this.sprite.draw(context, this.position.x, this.position.y);
-    }

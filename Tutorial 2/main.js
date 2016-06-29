@@ -12,20 +12,57 @@ var LAYER_COUNT = 2;
 var LAYER_BACKGOUND = 0;
 var LAYER_PLATFORMS = 1;
 var LAYER_ENEMIES = 2;
-var MAP = { tw: 60, th: 35 };
+var MAP = { tw: 60, th: 15 };
 var TILE = 35;
 var TILESET_TILE = TILE * 2;
 var TILESET_PADDING = 2;
 var TILESET_SPACING = 2;
 var TILESET_COUNT_X = 14;
 var TILESET_COUNT_Y = 14;
-var score = 999;
+var score = 8;
+
+var STATE_SPLASH = 0;
+var STATE_GAME = 1;
+var STATE_GAMEOVER = 2;
+var gameState = STATE_SPLASH;
+
+var music = new Audio("background.ogg");
+var sfx;
+
+
+var splashTimer = 3;
+
+
+
+
+music.loop = true;
+music.play();
+
+var isSFxPlaying = false;
+var sfx = new Audio("fireEffect.ogg");
+sfx.onended = function () {
+    isSfxPlaying = false;
+};
+
+/*var music = new music = new Howl(
+{
+    urls: ["background.ogg"],
+    loop: true,
+    buffer: true,
+    volume: 0.5
+});
+music.play();
+*/
+
+
+
+
 
 
 // abitrary choice for 1m
 var METER = TILE;
 // very exaggerated gravity (6x)
-var GRAVITY = METER * 9.8 * 6;
+var GRAVITY = METER * 9.8 * 3;
 // max horizontal speed (10 tiles per second)
 var MAXDX = METER * 10;
 // max vertical speed (15 tiles per second)
@@ -135,31 +172,8 @@ function cellAtTileCoord(layer, tx, ty) {
     return cells[layer][ty][tx];
 };
 
-/*function cellAtPixelCoord(layer, x, y) {
-    if (x < 0 || x > SCREEN_WIDTH) // remove ‘|| y<0’
-        return 1;
-    // let the player drop of the bottom of the screen
-    // (this means death)
-    if (y > SCREEN_HEIGHT)
-        return 0;
-    return cellAtTileCoord(layer, p2t(x), p2t(y));
-};
-function cellAtTileCoord(layer, tx, ty) // remove ‘|| y<0’
-{
-    if (tx < 0 || tx >= MAP.tw)
-        return 1;
-    // let the player drop of the bottom of the screen
-    // (this means death)
-    if (ty >= MAP.th)
-        return 0;
-    return cells[layer][tx][ty];
-};
-function tileToPixel(tile) {
-    return tile * TILE;
-};
-function pixelToTile(pixel) {
-    return Math.floor(pixel / TILE);
-};*/
+
+
 function bound(value, min, max) {
     if (value < min)
         return min;
@@ -169,25 +183,13 @@ function bound(value, min, max) {
 }
 
 
+
+
 var worldOffsetX = 0;
-var worldOffsetY = 0;
+//var worldOffsetY = 0;
 // load an image to draw
 function drawMap() {
-    worldOffsetY = startY * TILE + offsetY;    var startY = -1;    var tileY = pixelToTile(player.position.y);    var offsetY = TILE + Math.floor(player.position.y % TILE);    startY = tileY - Math.floor(maxTiles / 2);
-
-    if (startY < -1) {
-        startY = 0;
-        offsetY = 0;
-    }
-    if (startY > MAP.tw - maxTiles) {
-        startY = MAP.tw - maxTiles + 1;
-        offsetY = TILE;
-    }
-    worldOffsetY = startY * TILE + offsetY;    worldOffsetX = startX * TILE + offsetX;
-    context.fillStyle = "yellow";
-    context.font = "32px Arial";
-    var scoreText = "Time " + score;
-    context.fillText(scoreText, SCREEN_WIDTH - 170, 35);
+    
 
     var startX = -1;
     var maxTiles = Math.floor(SCREEN_WIDTH / TILE) + 2;
@@ -227,32 +229,34 @@ function drawMap() {
     }
 }
 
-/*//DEBUG DRAW LEVEL COLLISION DATA
-function DrawLevelCollisionData(tileLayer) {
-    for (var y = 0; y < level1.layers[tileLayer].height; y++) {
-        for (var x = 0; x < level1.layers[tileLayer].width; x++) {
-            if (cells[tileLayer][y][x] == 1) {
-                context.fillStyle = "#F00";
-                context.fillRect(TILE * x, TILE * y, TILE, TILE);
-            }
-        }
+ 
+
+
+function runSplash(deltaTime) {
+    splashTimer -= deltaTime;
+    if (splashTimer <= 0) {
+        gameState = STATE_GAME;
+        return;
     }
+    context.fillStyle = "#003";
+    context.font = "24px Arial";
+    context.fillText("ARE YOU READY?", 200, 240);
 }
-//DEBUG DRAW PLAYER CELL COLLISION DATA
-//fill in value of cell
-context.fillStyle = "#00F";
-context.fillRect(tx * 35, ty * 35, 35, 35);
-//fill in value of cellRight
-*/
 
-
-
-function run() {
+function runGame() {
     context.fillStyle = "#ccc";
     context.fillRect(0, 0, canvas.width, canvas.height);
-    drawMap();
+
+    context.fillStyle = "red";
+    context.font = "32px Arial";
+    var scoreText = "Time: " + score;
+    context.fillText(scoreText, SCREEN_WIDTH - 170, 35);
     var deltaTime = getDeltaTime();
+    score = score -= deltaTime;
+
+
     player.update(deltaTime);
+    drawMap();
     player.draw();
     // update the frame counter
     fpsTime += deltaTime;
@@ -269,7 +273,31 @@ function run() {
     context.fillText("FPS: " + fps, 5, 20, 100);
 }
 
-initialize();
+function runGameOver(deltaTime) {
+    context.fillStyle = "#001";
+    context.font = "24px Arial";
+    context.fillText("You FAILED", 200, 240);
+}
+
+
+function run() {
+    context.fillStyle = "#ccc";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    var deltaTime = getDeltaTime();
+    switch (gameState) {
+        case STATE_SPLASH:
+            runSplash(deltaTime);
+            break;
+        case STATE_GAME:
+            runGame(deltaTime);
+            break;
+        case STATE_GAMEOVER:
+            runGameOver(deltaTime);
+            break;
+    }
+}
+
+
 
 //-------------------- Don't modify anything below here
 
