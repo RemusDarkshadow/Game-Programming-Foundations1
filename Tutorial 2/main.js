@@ -54,7 +54,26 @@ sfx.onended = function () {
 music.play();
 */
 
-
+var sfxFire;
+function initialize() {
+    musicBackground = new Howl(
+    {
+        urls: ["background.ogg"],
+        loop: true,
+        buffer: true,
+        volume: 0.5
+    } );
+    musicBackground.play();
+    sfxFire = new Howl(
+    {
+        urls: ["fireEffect.ogg"],
+        buffer: true,
+        volume: 1,
+        onend: function() {
+            isSfxPlaying = false;
+        }
+    } );
+}
 
 
 
@@ -243,7 +262,7 @@ function runSplash(deltaTime) {
     context.fillText("ARE YOU READY?", 200, 240);
 }
 
-function runGame() {
+function runGame(deltaTime) {
     context.fillStyle = "#ccc";
     context.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -251,7 +270,7 @@ function runGame() {
     context.font = "32px Arial";
     var scoreText = "Time: " + score;
     context.fillText(scoreText, SCREEN_WIDTH - 170, 35);
-    var deltaTime = getDeltaTime();
+    //var deltaTime = getDeltaTime();
     score = score -= deltaTime;
 
 
@@ -297,7 +316,7 @@ function run() {
     }
 }
 
-
+initialize();
 
 //-------------------- Don't modify anything below here
 

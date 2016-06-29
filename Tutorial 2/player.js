@@ -97,7 +97,7 @@ Player.prototype.update = function (deltaTime) {
     }
     if (keyboard.isKeyDown(keyboard.KEY_SPACE) == true) {
         jump = true;
-        sfx.play();
+        sfxFire.play();
         if (left == true) {
             this.sprite.setAnimation(ANIM_JUMP_LEFT);
         }
