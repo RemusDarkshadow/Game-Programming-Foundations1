@@ -1,8 +1,5 @@
 var canvas = document.getElementById("gameCanvas")
 
-var sfx = function (){
-    sfx.play
-};
 
 var LEFT = 0;
 var RIGHT = 1;
@@ -214,6 +211,23 @@ Player.prototype.update = function (deltaTime) {
             this.velocity.x = 0;
         }
     }
+    if ((ty == 15) == true) {
+        gameState = STATE_GAMEOVER;
+    }
+
+    if ((tx == 0) == true) {
+        gameState = STATE_GAMEOVER;
+    }
+
+    if ((score <= 0) == true) {
+        gameState = STATE_GAMEOVER;
+    }
+    if (cellAtTileCoord(LAYER_OBJECT_TRIGGERS, tx, ty) == true) {
+        console.log("Hello");
+        gameState = STATE_WINGAME;
+        // game over man, game over
+    }
+   
 }
 
 

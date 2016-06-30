@@ -11,7 +11,7 @@ var keyboard = new Keyboard();
 var LAYER_COUNT = 2;
 var LAYER_BACKGOUND = 0;
 var LAYER_PLATFORMS = 1;
-var LAYER_ENEMIES = 2;
+var LAYER_OBJECT_TRIGGERS = 3;
 var MAP = { tw: 60, th: 15 };
 var TILE = 35;
 var TILESET_TILE = TILE * 2;
@@ -24,10 +24,10 @@ var score = 8;
 var STATE_SPLASH = 0;
 var STATE_GAME = 1;
 var STATE_GAMEOVER = 2;
+var STATE_WINGAME = 3;
 var gameState = STATE_SPLASH;
 
 var music = new Audio("background.ogg");
-var sfx;
 
 
 var splashTimer = 3;
@@ -35,14 +35,10 @@ var splashTimer = 3;
 
 
 
-music.loop = true;
-music.play();
+//music.loop = true;
+//music.play();
 
-var isSFxPlaying = false;
-var sfx = new Audio("fireEffect.ogg");
-sfx.onended = function () {
-    isSfxPlaying = false;
-};
+
 
 /*var music = new music = new Howl(
 {
@@ -55,25 +51,8 @@ music.play();
 */
 
 var sfxFire;
-function initialize() {
-    musicBackground = new Howl(
-    {
-        urls: ["background.ogg"],
-        loop: true,
-        buffer: true,
-        volume: 0.5
-    } );
-    musicBackground.play();
-    sfxFire = new Howl(
-    {
-        urls: ["fireEffect.ogg"],
-        buffer: true,
-        volume: 1,
-        onend: function() {
-            isSfxPlaying = false;
-        }
-    } );
-}
+
+    
 
 
 
@@ -121,8 +100,43 @@ function initialize() {
                 idx++;
             }
         }
-    }
+        cells[LAYER_OBJECT_TRIGGERS] = [];
+        idx = 0;
+        for (var y = 0; y < level1.layers[LAYER_OBJECT_TRIGGERS].height; y++) {
+            cells[LAYER_OBJECT_TRIGGERS][y] = [];
+            for (var x = 0; x < level1.layers[LAYER_OBJECT_TRIGGERS].width; x++) {
+                if (level1.layers[LAYER_OBJECT_TRIGGERS].data[idx] != 0) {
+                    cells[LAYER_OBJECT_TRIGGERS][y][x] = 1;
+                    cells[LAYER_OBJECT_TRIGGERS][y - 1][x] = 1;
+                    cells[LAYER_OBJECT_TRIGGERS][y - 1][x + 1] = 1;
+                    cells[LAYER_OBJECT_TRIGGERS][y][x + 1] = 1;
+                }
+                else if (cells[LAYER_OBJECT_TRIGGERS][y][x] != 1) {
+                    // if we haven't set this cell's value, then set it to 0 now
+                    cells[LAYER_OBJECT_TRIGGERS][y][x] = 0;
+                }
+                idx++;
+            }
+        }
+    } musicBackground = new Howl(
+    {
+        urls: ["background.ogg"],
+        loop: true,
+        buffer: true,
+        volume: 0.5
+    });
+    musicBackground.play();
+    sfxFire = new Howl(
+    {
+        urls: ["fireEffect.ogg"],
+        buffer: true,
+        volume: 1,
+        onend: function () {
+            isSfxPlaying = false;
+        }
+    });
 }
+
 
 
 
@@ -285,6 +299,7 @@ function runGame(deltaTime) {
         fps = fpsCount;
         fpsCount = 0;
     }
+   
     DrawLevelCollisionData = 1
     // draw the FPS
     context.fillStyle = "#f00";
@@ -297,6 +312,14 @@ function runGameOver(deltaTime) {
     context.font = "24px Arial";
     context.fillText("You FAILED", 200, 240);
 }
+
+
+function runWinGame(deltaTime) {
+    context.fillStyle = "#001";
+    context.font = "24px Arial";
+    context.fillText("You WIN", 200, 240);
+}
+
 
 
 function run() {
@@ -312,6 +335,9 @@ function run() {
             break;
         case STATE_GAMEOVER:
             runGameOver(deltaTime);
+            break;
+        case STATE_WINGAME:
+            runWinGame(deltaTime);
             break;
     }
 }
